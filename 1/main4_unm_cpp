@@ -1,0 +1,45 @@
+// ***********************************************************************
+//
+// Demo program for education in subject
+// Computer Architectures and Parallel Systems.
+// Petr Olivka, dep. of Computer Science, FEI, VSB-TU Ostrava, 2020/11
+// email:petr.olivka@vsb.cz
+//
+// Example of CUDA Technology Usage with unified memory.
+//
+// Image transformation from RGB to BW schema. 
+// Image manipulation is performed by OpenCV library. 
+//
+// ***********************************************************************
+ 
+#include <stdio.h>
+#include <cuda_device_runtime_api.h>
+#include <cuda_runtime.h>
+#include <opencv2/opencv.hpp>
+#include "uni_mem_allocator.h"
+#include "cuda_img.h"
+void zmenaBarvu(CudaPicture picture, dim3 t_grid_size, dim3 t_block_size);
+void zmena_rgb(CudaPicture picture, dim3 t_grid_size, dim3 t_block_size );
+int main()
+{
+        cv::Mat l_cv_img(400,400,CV_8UC3);
+        for(int y =0; y < 400; y++){
+            for(int x =0; x < 400; x++){
+                uchar3 l_bgr = (uchar3) {224, 224, 224};
+                l_cv_img.at<uchar3>( y, x ) = l_bgr;
+            }
+        }
+        CudaPicture picture;
+        picture.size.x = l_cv_img.size().width;
+        picture.size.y = l_cv_img.size().height;
+        picture.vdata = l_cv_img.data;
+        cv::imshow( "Original Image", l_cv_img );
+        cv::waitKey(0);
+        zmenaBarvu(picture, dim3(100,100), dim3(6,6));
+        cv::imshow( "Original Image with splitted in half RGB-Chanells", l_cv_img );
+        cv::waitKey(0);
+        zmena_rgb(picture, dim3(100,100), dim3(6,6));
+        cv::imshow( "Chess image",l_cv_img );
+        cv::waitKey(0);
+    return 0;
+}
