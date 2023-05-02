@@ -1,0 +1,26 @@
+__global__ void kernel_chessboard(CudaImg t_color_cuda_img)
+{
+    // X,Y coordinates and check image dimensions
+    int l_y = blockDim.y * blockIdx.y + threadIdx.y;
+    int l_x = blockDim.x * blockIdx.x + threadIdx.x;
+    if (l_y >= t_color_cuda_img.m_size.y)
+        return;
+    if (l_x >= t_color_cuda_img.m_size.x)
+        return;
+
+    t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].x = 255 ;
+    t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].y = 0;
+    t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].z = 0;
+    if (blockIdx.x % 2 == 0)
+    {
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].x = 0;
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].y = 255;
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].z = 0;
+    }
+    if (blockIdx.x % 3 == 0)
+    {
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].x = 0;
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].y = 0;
+        t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].z = 255;
+    }
+}
