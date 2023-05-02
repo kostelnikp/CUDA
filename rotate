@@ -1,0 +1,24 @@
+__global__ void kernel_rotate(CudaImg input, CudaImg output)
+{
+	// X,Y coordinates 
+	int l_y = blockDim.y * blockIdx.y + threadIdx.y;
+	int l_x = blockDim.x * blockIdx.x + threadIdx.x;
+	if (l_y >= input.m_size.y) return;
+	if (l_x >= input.m_size.x)  return;
+	int pom_x = input.m_size.x - l_x;
+	int pom_y = input.m_size.y - l_y;
+	output.atuchar4(pom_y, pom_x) =input.atuchar4(l_y, l_x);
+}
+void cu_rotate(CudaImg input, CudaImg output)
+{
+	cudaError_t l_cerr;
+	// Grid creation, size of grid must be equal or greater than images
+	int l_block_size = 32;
+	dim3 l_blocks((input.m_size.x + l_block_size - 1) / l_block_size,
+		(input.m_size.y + l_block_size - 1) / l_block_size);
+	dim3 l_threads(l_block_size, l_block_size);
+	kernel_rotate << < l_blocks, l_threads >> > (input, output);
+	if ((l_cerr = cudaGetLastError()) != cudaSuccess)
+		printf("CUDA Error [%d] - '%s'\n", __LINE__, cudaGetErrorString(l_cerr));
+	cudaDeviceSynchronize();
+}
