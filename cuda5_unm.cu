@@ -17,7 +17,7 @@
 #include "cuda_img.h"
 
 // Demo kernel to create chess board
-__global__ void kernel_chessboard(CudaImg t_color_cuda_img)
+__global__ void kernel_chessboard(CudaImg t_color_cuda_img, int n)
 {
     // X,Y coordinates and check image dimensions
     int l_y = blockDim.y * blockIdx.y + threadIdx.y;
@@ -34,9 +34,46 @@ __global__ void kernel_chessboard(CudaImg t_color_cuda_img)
     // Set color based on block position
     int block_index = blockIdx.y * gridDim.x + blockIdx.x;
     int color_index = block_index % 3;
+    if (n == 1) //ZLY GBR
+    {
+    if (color_index == 0)
+    {
+         green = 255;
+    }
+    else if (color_index == 1)
+    {
+         red = 255;
+    }
+    else
+    {
+        blue = 255;
+    }
+    }
+
+
+    else if (n == 2) //BRG
+    {
     if (color_index == 0)
     {
         red = 255;
+    }
+    else if (color_index == 1)
+    {
+        
+        blue = 255;
+    }
+    else
+    {
+        green = 255;
+    }
+    }
+
+
+    else if (n == 3) //RGB
+    {
+        if (color_index == 0)
+    {
+        blue = 255;
     }
     else if (color_index == 1)
     {
@@ -44,8 +81,11 @@ __global__ void kernel_chessboard(CudaImg t_color_cuda_img)
     }
     else
     {
-        blue = 255;
+        red = 255;
+        
     }
+    }
+    
 
     t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].x = red;
     t_color_cuda_img.m_p_uchar3[l_y * t_color_cuda_img.m_size.x + l_x].y = green;
@@ -53,7 +93,7 @@ __global__ void kernel_chessboard(CudaImg t_color_cuda_img)
 }
 
 
-void cu_create_chessboard(CudaImg t_color_cuda_img, int t_square_size)
+void cu_create_chessboard(CudaImg t_color_cuda_img, int t_square_size, int n)
 {
     cudaError_t l_cerr;
 
@@ -61,7 +101,7 @@ void cu_create_chessboard(CudaImg t_color_cuda_img, int t_square_size)
     dim3 l_blocks((t_color_cuda_img.m_size.x + t_square_size - 1) / t_square_size,
                   (t_color_cuda_img.m_size.y + t_square_size - 1) / t_square_size);
     dim3 l_threads(t_square_size, t_square_size);
-    kernel_chessboard<<<l_blocks, l_threads>>>(t_color_cuda_img);
+    kernel_chessboard<<<l_blocks, l_threads>>>(t_color_cuda_img, n);
 
     if ((l_cerr = cudaGetLastError()) != cudaSuccess)
         printf("CUDA Error [%d] - '%s'\n", __LINE__, cudaGetErrorString(l_cerr));
