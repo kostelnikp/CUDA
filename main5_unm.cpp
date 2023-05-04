@@ -1,38 +1,47 @@
-// ***********************************************************************
+// *********************************************************************
 //
 // Demo program for education in subject
 // Computer Architectures and Parallel Systems.
 // Petr Olivka, dep. of Computer Science, FEI, VSB-TU Ostrava, 2020/11
 // email:petr.olivka@vsb.cz
 //
-// Example of CUDA Technology Usage with unified memory.
+// Example of CUDA Technology Usage without unified memory.
 //
-// Image transformation from RGB to BW schema. 
+// Image creation and its modification using CUDA.
 // Image manipulation is performed by OpenCV library. 
 //
-// ***********************************************************************
-
+// *********************************************************************
 #include <stdio.h>
 #include <cuda_device_runtime_api.h>
 #include <cuda_runtime.h>
 #include <opencv2/opencv.hpp>
-
 #include "uni_mem_allocator.h"
 #include "cuda_img.h"
 
-// Function prototype from .cu file
+void cu_run_RGB(CudaImg puvodni, CudaImg oriznuty);
 void cu_create_chessboard( CudaImg t_color_cuda_img, int t_square_size , int n);
-void cu_create_alphaimg( CudaImg t_color_cuda_img, uchar3 t_color );
-void cu_insertimage( CudaImg t_big_cuda_img, CudaImg t_small_cuda_img, int2 t_position );
-
-int main( int t_numarg, char **t_arg )
+int main()
 {
     // Uniform Memory allocator for Mat
     UniformAllocator allocator;
-    cv::Mat::setDefaultAllocator( &allocator );
+    cv::Mat::setDefaultAllocator(&allocator);
+    cv::Mat nacteny_obrazek = cv::imread("/home/fei/kuc0396/Downloads/biela.jpg", cv::IMREAD_UNCHANGED);
+    CudaImg pomocny_obrazek; 
+    pomocny_obrazek.m_size.x = nacteny_obrazek.cols;
+    pomocny_obrazek.m_size.y = nacteny_obrazek.rows;
+    pomocny_obrazek.m_p_uchar4 = (uchar4*)nacteny_obrazek.data;
+    cv::imwrite("povodny.jpg", nacteny_obrazek);
+
+    cv::Mat pulka(pomocny_obrazek.m_size.y, pomocny_obrazek.m_size.x, CV_8UC3);
+    CudaImg pulka2;
+    pulka2.m_size.x = pulka.cols;
+    pulka2.m_size.y = pulka.rows;
+    pulka2.m_p_uchar3 = (uchar3*)pulka.data;
+    cu_run_RGB(pomocny_obrazek, pulka2);
+    cv::imwrite("polkaRGB.jpg", pulka);
+
 
     cv::Mat l_chessboard_cv_img( 511, 515, CV_8UC3 );
-
     CudaImg l_chessboard_cuda_img;
     l_chessboard_cuda_img.m_size.x = l_chessboard_cv_img.cols;
     l_chessboard_cuda_img.m_size.y = l_chessboard_cv_img.rows;
@@ -40,55 +49,10 @@ int main( int t_numarg, char **t_arg )
 
     cu_create_chessboard( l_chessboard_cuda_img, 21 , 1);
     cv::imwrite( "GBR.jpg", l_chessboard_cv_img );
-        cu_create_chessboard( l_chessboard_cuda_img, 21 , 2);
-        cv::imwrite( "BRG.jpg", l_chessboard_cv_img );
 
-    cu_create_chessboard( l_chessboard_cuda_img, 21 , 3);
+    cu_create_chessboard( l_chessboard_cuda_img, 21, 2);
+    cv::imwrite( "BRG.jpg", l_chessboard_cv_img );
 
-
+    cu_create_chessboard( l_chessboard_cuda_img, 21, 3);
     cv::imwrite( "RGB.jpg", l_chessboard_cv_img );
-
-    cv::Mat l_alphaimg_cv_img( 211, 191, CV_8UC4 );
-
-    CudaImg l_alphaimg_cuda_img;
-    l_alphaimg_cuda_img.m_size.x = l_alphaimg_cv_img.cols;
-    l_alphaimg_cuda_img.m_size.y = l_alphaimg_cv_img.rows;
-    l_alphaimg_cuda_img.m_p_uchar4 = ( uchar4 * ) l_alphaimg_cv_img.data;
-
-    cu_create_alphaimg( l_alphaimg_cuda_img, { 0, 0, 255 } );
-
-    cv::imshow( "Alpha channel", l_alphaimg_cv_img );
-
-    cu_insertimage( l_chessboard_cuda_img, l_alphaimg_cuda_img, { 11, 23 } );
-
-    cv::imshow( "Result I", l_chessboard_cv_img );
-
-    // some argument?
-    if ( t_numarg > 1 )
-    {
-        // Load image
-        cv::Mat l_bgra_cv_img = cv::imread( t_arg[ 1 ], cv::IMREAD_UNCHANGED ); // CV_LOAD_IMAGE_UNCHANGED );
-
-        if ( !l_bgra_cv_img.data )
-            printf( "Unable to read file '%s'\n", t_arg[ 1 ] );
-
-        else if ( l_bgra_cv_img.channels() != 4 )
-            printf( "Image does not contain alpha channel!\n" );
-
-        else
-        {
-            // insert loaded image
-            CudaImg l_bgra_cuda_img;
-            l_bgra_cuda_img.m_size.x = l_bgra_cv_img.cols;
-            l_bgra_cuda_img.m_size.y = l_bgra_cv_img.rows;
-            l_bgra_cuda_img.m_p_uchar4 = ( uchar4 * ) l_bgra_cv_img.data;
-
-            cu_insertimage( l_chessboard_cuda_img, l_bgra_cuda_img, { ( int ) l_chessboard_cuda_img.m_size.x / 2, ( int ) l_chessboard_cuda_img.m_size.y / 2 } );
-
-            cv::imshow( "Result II", l_chessboard_cv_img );
-        }
-    }
-
-    cv::waitKey( 0 );
 }
-
