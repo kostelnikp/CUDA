@@ -1,3 +1,4 @@
+
 // ***********************************************************************
 //
 // Demo program for education in subject
@@ -10,7 +11,6 @@
 // Image interface for CUDA
 //
 // ***********************************************************************
-
 #pragma once
 #include <opencv2/core/mat.hpp>
 // Structure definition for exchanging data between Host and Device
@@ -23,13 +23,11 @@ struct CudaImg
         uchar3* m_p_uchar3;   // data of picture
         uchar4* m_p_uchar4;   // data of picture
     };
-    _host_
-_device_ uchar4& at4(int y, int x) 
+    __host__ __device__ uchar4& atuchar4(int y, int x) 
     { 
         return m_p_uchar4[y * m_size.x + x];
     }
-    _host_
-_device_ uchar3& at3(int y, int x) 
+    __host__ __device__ uchar3& atuchar3(int y, int x) 
     { 
         return m_p_uchar3[y * m_size.x + x];
     }
